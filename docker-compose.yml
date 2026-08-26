@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: parking-postgres
+    ports:
+      - "${DB_PORT:-55432}:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-parking_db}
+      POSTGRES_USER: ${DB_USER:-parking_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-parking_password}
+    volumes:
+      - parking_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${DB_USER:-parking_user} -d ${DB_NAME:-parking_db}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  parking_postgres_data:
