@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import cl.desafiolatam.parking.application.service.ParkingStayService;
 import cl.desafiolatam.parking.domain.exception.ActiveParkingStayNotFoundException;
 import cl.desafiolatam.parking.domain.model.ParkingStay;
+import cl.desafiolatam.parking.domain.exception.ParkingStayNotFoundException;
 
 @WebMvcTest(ParkingStayController.class)
 class ParkingStayControllerTest {
@@ -51,14 +52,12 @@ class ParkingStayControllerTest {
         void shouldReturnNotFoundWhenActiveParkingStayNotExists() throws Exception {
                 // Arrange
                 String endpoint = "/api/v1/parking-stays/active/ABCD12";
-                
+
                 when(service.findActiveByLicensePlate("ABCD12"))
                                 .thenThrow(
                                                 new ActiveParkingStayNotFoundException());
                 // Act
                 ResultActions result = mockMvc.perform(get(endpoint));
-
-                
 
                 // Assert
                 result.andExpect(status().isNotFound())
@@ -139,6 +138,61 @@ class ParkingStayControllerTest {
                                 .andExpect(jsonPath("$.code").value(400))
                                 .andExpect(jsonPath("$.message")
                                                 .value("Malformed JSON request"))
+                                .andExpect(jsonPath("$.timestamp").exists());
+        }
+
+        @Test
+        void shouldReturnParkingStayById() throws Exception {
+                UUID id = UUID.fromString(
+                                "03227f66-76dc-4e71-be12-78ca6e869afd");
+
+                LocalDateTime entryTime = LocalDateTime.of(2026, 8, 26, 22, 50);
+
+                ParkingStay parkingStay = new ParkingStay(
+                                id,
+                                "ABCD12",
+                                entryTime,
+                                null);
+
+                when(service.findById(id))
+                                .thenReturn(parkingStay);
+
+                mockMvc.perform(get(
+                                "/api/v1/parking-stays/{id}",
+                                id))
+                                .andExpect(status().isOk())
+                                .andExpect(content().contentTypeCompatibleWith(
+                                                MediaType.APPLICATION_JSON))
+                                .andExpect(jsonPath("$.id")
+                                                .value(id.toString()))
+                                .andExpect(jsonPath("$.licensePlate")
+                                                .value("ABCD12"))
+                                .andExpect(jsonPath("$.entryTime")
+                                                .value("2026-08-26T22:50:00"))
+                                .andExpect(jsonPath("$.exitTime").isEmpty());
+        }
+
+        @Test
+        void shouldReturnNotFoundWhenParkingStayIdDoesNotExist()
+                        throws Exception {
+                UUID id = UUID.fromString(
+                                "11111111-1111-1111-1111-111111111111");
+
+                when(service.findById(id))
+                                .thenThrow(
+                                                new ParkingStayNotFoundException(id));
+
+                mockMvc.perform(get(
+                                "/api/v1/parking-stays/{id}",
+                                id))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().contentTypeCompatibleWith(
+                                                MediaType.APPLICATION_JSON))
+                                .andExpect(jsonPath("$.code").value(404))
+                                .andExpect(jsonPath("$.message")
+                                                .value(
+                                                                "Parking stay not found with id: "
+                                                                                + id))
                                 .andExpect(jsonPath("$.timestamp").exists());
         }
 }

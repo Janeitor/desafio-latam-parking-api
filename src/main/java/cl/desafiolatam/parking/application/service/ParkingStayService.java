@@ -11,7 +11,9 @@ import cl.desafiolatam.parking.domain.exception.ActiveParkingStayAlreadyExistsEx
 import cl.desafiolatam.parking.domain.exception.ActiveParkingStayNotFoundException;
 import cl.desafiolatam.parking.domain.model.ParkingStay;
 import cl.desafiolatam.parking.domain.port.ParkingStayRepository;
+import java.util.UUID;
 
+import cl.desafiolatam.parking.domain.exception.ParkingStayNotFoundException;
 
 @Service
 @Transactional
@@ -61,5 +63,13 @@ public class ParkingStayService {
                         normalizedLicensePlate)
                 .orElseThrow(
                         ActiveParkingStayNotFoundException::new);
+    }
+
+    @Transactional(readOnly = true)
+    public ParkingStay findById(UUID id) {
+        return repository
+                .findById(id)
+                .orElseThrow(
+                        () -> new ParkingStayNotFoundException(id));
     }
 }

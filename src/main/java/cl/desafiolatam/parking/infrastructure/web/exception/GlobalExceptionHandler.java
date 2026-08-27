@@ -13,6 +13,7 @@ import cl.desafiolatam.parking.domain.exception.ActiveParkingStayAlreadyExistsEx
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import cl.desafiolatam.parking.domain.exception.ParkingStayNotFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -67,6 +68,19 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .badRequest()
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(ParkingStayNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleParkingStayNotFound(
+            ParkingStayNotFoundException exception) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                exception.getMessage(),
+                LocalDateTime.now());
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
                 .body(errorResponse);
     }
 }

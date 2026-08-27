@@ -17,6 +17,7 @@ import cl.desafiolatam.parking.domain.model.ParkingStay;
 import cl.desafiolatam.parking.infrastructure.web.dto.CreateParkingStayRequest;
 import cl.desafiolatam.parking.infrastructure.web.dto.ParkingStayResponse;
 import jakarta.validation.Valid;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/parking-stays")
@@ -38,6 +39,14 @@ public class ParkingStayController {
                 .toList();
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ParkingStayResponse> getParkingStayById(
+            @PathVariable(name = "id") UUID id) {
+        ParkingStay parkingStay = service.findById(id);
+
+        return ResponseEntity.ok(toResponse(parkingStay));
     }
 
     @PostMapping

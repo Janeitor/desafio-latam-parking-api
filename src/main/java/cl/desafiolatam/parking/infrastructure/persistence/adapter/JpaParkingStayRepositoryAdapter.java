@@ -9,6 +9,7 @@ import cl.desafiolatam.parking.domain.model.ParkingStay;
 import cl.desafiolatam.parking.domain.port.ParkingStayRepository;
 import cl.desafiolatam.parking.infrastructure.persistence.entity.ParkingStayEntity;
 import cl.desafiolatam.parking.infrastructure.persistence.repository.ParkingStayJpaRepository;
+import java.util.UUID;
 
 @Repository
 public class JpaParkingStayRepositoryAdapter
@@ -24,10 +25,16 @@ public class JpaParkingStayRepositoryAdapter
     @Override
     public ParkingStay save(ParkingStay parkingStay) {
         ParkingStayEntity entity = toEntity(parkingStay);
-        ParkingStayEntity savedEntity =
-                jpaRepository.save(entity);
+        ParkingStayEntity savedEntity = jpaRepository.save(entity);
 
         return toDomain(savedEntity);
+    }
+
+    @Override
+    public Optional<ParkingStay> findById(UUID id) {
+        return jpaRepository
+                .findById(id)
+                .map(this::toDomain);
     }
 
     @Override
