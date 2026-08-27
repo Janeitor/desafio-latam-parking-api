@@ -9,6 +9,14 @@ import org.springframework.http.ResponseEntity;
 
 import cl.desafiolatam.parking.domain.exception.ActiveParkingStayNotFoundException;
 import cl.desafiolatam.parking.infrastructure.web.dto.ErrorResponse;
+import cl.desafiolatam.parking.domain.exception.ActiveParkingStayAlreadyExistsException;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import cl.desafiolatam.parking.infrastructure.web.dto.ErrorResponse;
 
 public class GlobalExceptionHandlerTest {
 
@@ -32,5 +40,24 @@ public class GlobalExceptionHandlerTest {
         assertNotNull(body.timestamp());
 
     }
-    
+
+    @Test
+    void shouldHandleActiveParkingStayAlreadyExists() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+        ActiveParkingStayAlreadyExistsException exception = new ActiveParkingStayAlreadyExistsException(
+                "ABCD12");
+
+        ResponseEntity<ErrorResponse> response = handler.handleActiveParkingStayAlreadyExists(
+                exception);
+
+        assertThat(response.getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().code()).isEqualTo(409);
+        assertThat(response.getBody().message())
+                .contains("ABCD12");
+        assertThat(response.getBody().timestamp()).isNotNull();
+    }
+
 }

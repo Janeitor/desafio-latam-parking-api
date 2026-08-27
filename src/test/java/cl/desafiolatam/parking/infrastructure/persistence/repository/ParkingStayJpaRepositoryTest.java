@@ -13,11 +13,11 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import cl.desafiolatam.parking.infrastructure.persistence.entity.ParkingStayEntity;
+import java.util.Locale;
 
 @DataJpaTest
 @ActiveProfiles("dev")
-@AutoConfigureTestDatabase(
-        replace = AutoConfigureTestDatabase.Replace.NONE)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class ParkingStayJpaRepositoryTest {
 
     @Autowired
@@ -26,26 +26,31 @@ class ParkingStayJpaRepositoryTest {
     @Test
     void shouldSaveAndFindActiveParkingStayByLicensePlate() {
         UUID id = UUID.randomUUID();
-        LocalDateTime entryTime =
-                LocalDateTime.of(2026, 8, 26, 17, 0);
+        String licensePlate = "T"
+                + UUID.randomUUID()
+                        .toString()
+                        .replace("-", "")
+                        .substring(0, 6)
+                        .toUpperCase(Locale.ROOT);
+
+        LocalDateTime entryTime = LocalDateTime.of(2026, 8, 26, 17, 0);
 
         ParkingStayEntity parkingStay = new ParkingStayEntity(
                 id,
-                "ABCD12",
+                licensePlate,
                 entryTime,
                 null);
 
         repository.save(parkingStay);
 
-        Optional<ParkingStayEntity> result =
-                repository
-                        .findFirstByLicensePlateAndExitTimeIsNull(
-                                "ABCD12");
+        Optional<ParkingStayEntity> result = repository
+                .findFirstByLicensePlateAndExitTimeIsNull(
+                        licensePlate);
 
         assertThat(result).isPresent();
         assertThat(result.get().getId()).isEqualTo(id);
         assertThat(result.get().getLicensePlate())
-                .isEqualTo("ABCD12");
+                .isEqualTo(licensePlate);
         assertThat(result.get().getEntryTime())
                 .isEqualTo(entryTime);
         assertThat(result.get().getExitTime()).isNull();
