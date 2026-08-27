@@ -227,7 +227,7 @@ Remove-Item Env:SERVER_PORT -ErrorAction SilentlyContinue
 Remove-Item Env:DB_URL -ErrorAction SilentlyContinue
 Remove-Item Env:DB_USER -ErrorAction SilentlyContinue
 Remove-Item Env:DB_PASSWORD -ErrorAction SilentlyContinue
-
+```
 
 ## Documentación OpenAPI
 
