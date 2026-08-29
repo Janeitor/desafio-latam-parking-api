@@ -18,69 +18,156 @@ import cl.desafiolatam.parking.infrastructure.web.dto.CreateParkingStayRequest;
 import cl.desafiolatam.parking.infrastructure.web.dto.ParkingStayResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import cl.desafiolatam.parking.infrastructure.web.dto.ErrorResponse;
+
+@Tag(name = "Parking Stays", description = "Operations for registering and querying vehicle parking stays")
 
 @RestController
 @RequestMapping("/api/v1/parking-stays")
 public class ParkingStayController {
 
-    private final ParkingStayService service;
+        private final ParkingStayService service;
 
-    public ParkingStayController(
-            ParkingStayService service) {
-        this.service = service;
-    }
+        public ParkingStayController(
+                        ParkingStayService service) {
+                this.service = service;
+        }
 
-    @GetMapping
-    public ResponseEntity<List<ParkingStayResponse>> getAllParkingStays() {
-        List<ParkingStayResponse> response = service
-                .findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        @Operation(
+                summary = "Get all parking stays",
+                description = "Returns every parking stay currently stored")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200",
+                        description = "Parking stays retrieved successfully",
+                        content = @Content(
+                                mediaType = "application/json",
+                                array = @ArraySchema(
+                                        schema = @Schema(
+                                                implementation = ParkingStayResponse.class))))
+        })
+        @GetMapping
+        public ResponseEntity<List<ParkingStayResponse>> getAllParkingStays() {
+                List<ParkingStayResponse> response = service
+                                .findAll()
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
 
-        return ResponseEntity.ok(response);
-    }
+                return ResponseEntity.ok(response);
+        }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ParkingStayResponse> getParkingStayById(
-            @PathVariable(name = "id") UUID id) {
-        ParkingStay parkingStay = service.findById(id);
+        @Operation(
+                summary = "Get a parking stay by id",
+                description = "Returns a parking stay identified by its UUID")
+        @ApiResponses({
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Parking stay found",
+                        content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(
+                                        implementation = ParkingStayResponse.class))),
+                @ApiResponse(
+                        responseCode = "404",
+                        description = "Parking stay not found",
+                        content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(
+                                        implementation = ErrorResponse.class)))
+        })
 
-        return ResponseEntity.ok(toResponse(parkingStay));
-    }
+        @GetMapping("/{id}")
+        public ResponseEntity<ParkingStayResponse> getParkingStayById(
+                        @PathVariable(name = "id") UUID id) {
+                ParkingStay parkingStay = service.findById(id);
 
-    @PostMapping
-    public ResponseEntity<ParkingStayResponse> registerParkingEntry(
-            @Valid @RequestBody CreateParkingStayRequest request) {
-        ParkingStay parkingStay = service.registerEntry(
-                request.licensePlate(),
-                request.entryTime());
+                return ResponseEntity.ok(toResponse(parkingStay));
+        }
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(parkingStay.getId())
-                .toUri();
+        @Operation(
+                summary = "Register a vehicle entry",
+                description = "Creates an active parking stay for a vehicle that is not currently parked")
+        @ApiResponses({
+                @ApiResponse(
+                        responseCode = "201",
+                        description = "Parking stay created successfully",
+                        content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(
+                                        implementation = ParkingStayResponse.class))),
+                @ApiResponse(
+                        responseCode = "400",
+                        description = "Invalid request data or malformed JSON",
+                        content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(
+                                        implementation = ErrorResponse.class))),
+                @ApiResponse(
+                        responseCode = "409",
+                        description = "The license plate already has an active parking stay",
+                        content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(
+                                        implementation = ErrorResponse.class)))
+        })
+        @PostMapping
+        public ResponseEntity<ParkingStayResponse> registerParkingEntry(
+                        @Valid @RequestBody CreateParkingStayRequest request) {
+                ParkingStay parkingStay = service.registerEntry(
+                                request.licensePlate(),
+                                request.entryTime());
 
-        return ResponseEntity
-                .created(location)
-                .body(toResponse(parkingStay));
-    }
+                URI location = ServletUriComponentsBuilder
+                                .fromCurrentRequest()
+                                .path("/{id}")
+                                .buildAndExpand(parkingStay.getId())
+                                .toUri();
 
-    @GetMapping("/active/{licensePlate}")
-    public ResponseEntity<ParkingStayResponse> getActiveParkingStay(
-            @PathVariable(name = "licensePlate") String licensePlate) {
-        ParkingStay parkingStay = service.findActiveByLicensePlate(licensePlate);
+                return ResponseEntity
+                                .created(location)
+                                .body(toResponse(parkingStay));
+        }
 
-        return ResponseEntity.ok(toResponse(parkingStay));
-    }
+        @Operation(
+                summary = "Get an active parking stay by license plate",
+                description = "Returns the active parking stay associated with a vehicle license plate")
+        @ApiResponses({
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Active parking stay found",
+                        content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(
+                                        implementation = ParkingStayResponse.class))),
+                @ApiResponse(
+                        responseCode = "404",
+                        description = "Active parking stay not found",
+                        content = @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(
+                                        implementation = ErrorResponse.class)))
+        })
+        @GetMapping("/active/{licensePlate}")
+        public ResponseEntity<ParkingStayResponse> getActiveParkingStay(
+                        @PathVariable(name = "licensePlate") String licensePlate) {
+                ParkingStay parkingStay = service.findActiveByLicensePlate(licensePlate);
 
-    private ParkingStayResponse toResponse(
-            ParkingStay parkingStay) {
-        return new ParkingStayResponse(
-                parkingStay.getId(),
-                parkingStay.getLicensePlate(),
-                parkingStay.getEntryTime(),
-                parkingStay.getExitTime());
-    }
+                return ResponseEntity.ok(toResponse(parkingStay));
+        }
+
+        private ParkingStayResponse toResponse(
+                        ParkingStay parkingStay) {
+                return new ParkingStayResponse(
+                                parkingStay.getId(),
+                                parkingStay.getLicensePlate(),
+                                parkingStay.getEntryTime(),
+                                parkingStay.getExitTime());
+        }
 }

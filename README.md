@@ -145,7 +145,21 @@ Después de clonar el repositorio, entra en su directorio e instala las dependen
 mvn clean test
 ```
 
-Con PostgreSQL levantado, inicia la API:
+Con PostgreSQL levantado, inicia la API utilizando Maven Wrapper.
+
+En Windows:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+En Linux o macOS:
+
+```bash
+./mvnw spring-boot:run
+```
+
+Si Maven está instalado globalmente, también puede utilizarse:
 
 ```powershell
 mvn spring-boot:run
@@ -233,8 +247,10 @@ Remove-Item Env:DB_PASSWORD -ErrorAction SilentlyContinue
 
 Con el perfil `dev`, la documentación está disponible en:
 
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+- OpenAPI JSON: `http://localhost:8080/api-docs`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+Los controladores y DTO se documentan mediante `@Tag`, `@Operation`, `@ApiResponses` y `@Schema`. Swagger UI permite ejecutar los endpoints mediante la opción **Try it out**.
 
 Estas rutas permanecen deshabilitadas en el perfil `prod`.
 
@@ -278,6 +294,14 @@ La respuesta utiliza `201 Created` e incluye una cabecera `Location` con la URL 
 
 Una estadía con `exitTime` igual a `null` se considera activa. Si la patente ya tiene una estadía activa, la API rechaza la nueva entrada con `409 Conflict`.
 
+
+### Evidencia de prueba con Postman
+
+La siguiente prueba registra una estadía mediante el endpoint `POST /api/v1/parking-stays` y confirma la respuesta `201 Created`:
+
+![Registro de una estadía desde Postman](docs/images/postman-register-parking-stay.png)
+
+
 ## Respuestas de error
 
 Los errores se entregan mediante una estructura JSON común:
@@ -295,7 +319,7 @@ Estados utilizados:
 | Estado | Situación |
 |---|---|
 | `400 Bad Request` | Datos inválidos o JSON mal formado |
-| `404 Not Found` | Estadía o estadía activa inexistente |
+| `404 Not Found` | Estadía oe stadía activa inexistente |
 | `409 Conflict` | La patente ya tiene una estadía activa |
 
 ## Pruebas
