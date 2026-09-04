@@ -556,16 +556,39 @@ Si Docker está apagado, las pruebas puramente unitarias pueden pasar, pero las 
 
 ### Cobertura con JaCoCo
 
-JaCoCo genera el informe HTML en:
+Para generar y visualizar el informe de cobertura:
+
+1. Confirmar que PostgreSQL esté activo, porque la suite contiene pruebas JPA y de contexto:
+
+```powershell
+docker compose up -d
+docker compose ps
+```
+
+2. Ejecutar las pruebas y la verificación de cobertura:
+
+```powershell
+mvn clean verify
+```
+
+Este comando ejecuta las 30 pruebas, genera el informe y aplica el umbral obligatorio del 100 % para `domain` y `application`.
+
+3. Abrir el informe HTML en Windows:
+
+```powershell
+Start-Process target\site\jacoco\index.html
+```
+
+El archivo generado se encuentra en:
 
 ```text
 target/site/jacoco/index.html
 ```
 
-Puede abrirse en Windows con:
+En Linux puede abrirse con:
 
-```powershell
-Start-Process target\site\jacoco\index.html
+```bash
+xdg-open target/site/jacoco/index.html
 ```
 
 El informe distingue entre el núcleo lógico y la cobertura global:
