@@ -26,6 +26,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import cl.desafiolatam.parking.infrastructure.web.dto.ErrorResponse;
+import org.springframework.web.bind.annotation.PatchMapping;
+
+import cl.desafiolatam.parking.infrastructure.web.dto.CheckoutParkingStayRequest;
 
 @Tag(name = "Parking Stays", description = "Operations for registering and querying vehicle parking stays")
 
@@ -40,17 +43,9 @@ public class ParkingStayController {
                 this.service = service;
         }
 
-        @Operation(
-                summary = "Get all parking stays",
-                description = "Returns every parking stay currently stored")
+        @Operation(summary = "Get all parking stays", description = "Returns every parking stay currently stored")
         @ApiResponses({
-                        @ApiResponse(responseCode = "200",
-                        description = "Parking stays retrieved successfully",
-                        content = @Content(
-                                mediaType = "application/json",
-                                array = @ArraySchema(
-                                        schema = @Schema(
-                                                implementation = ParkingStayResponse.class))))
+                        @ApiResponse(responseCode = "200", description = "Parking stays retrieved successfully", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = ParkingStayResponse.class))))
         })
         @GetMapping
         public ResponseEntity<List<ParkingStayResponse>> getAllParkingStays() {
@@ -63,24 +58,10 @@ public class ParkingStayController {
                 return ResponseEntity.ok(response);
         }
 
-        @Operation(
-                summary = "Get a parking stay by id",
-                description = "Returns a parking stay identified by its UUID")
+        @Operation(summary = "Get a parking stay by id", description = "Returns a parking stay identified by its UUID")
         @ApiResponses({
-                @ApiResponse(
-                        responseCode = "200",
-                        description = "Parking stay found",
-                        content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(
-                                        implementation = ParkingStayResponse.class))),
-                @ApiResponse(
-                        responseCode = "404",
-                        description = "Parking stay not found",
-                        content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(
-                                        implementation = ErrorResponse.class)))
+                        @ApiResponse(responseCode = "200", description = "Parking stay found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ParkingStayResponse.class))),
+                        @ApiResponse(responseCode = "404", description = "Parking stay not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
         })
 
         @GetMapping("/{id}")
@@ -91,31 +72,11 @@ public class ParkingStayController {
                 return ResponseEntity.ok(toResponse(parkingStay));
         }
 
-        @Operation(
-                summary = "Register a vehicle entry",
-                description = "Creates an active parking stay for a vehicle that is not currently parked")
+        @Operation(summary = "Register a vehicle entry", description = "Creates an active parking stay for a vehicle that is not currently parked")
         @ApiResponses({
-                @ApiResponse(
-                        responseCode = "201",
-                        description = "Parking stay created successfully",
-                        content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(
-                                        implementation = ParkingStayResponse.class))),
-                @ApiResponse(
-                        responseCode = "400",
-                        description = "Invalid request data or malformed JSON",
-                        content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(
-                                        implementation = ErrorResponse.class))),
-                @ApiResponse(
-                        responseCode = "409",
-                        description = "The license plate already has an active parking stay",
-                        content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(
-                                        implementation = ErrorResponse.class)))
+                        @ApiResponse(responseCode = "201", description = "Parking stay created successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ParkingStayResponse.class))),
+                        @ApiResponse(responseCode = "400", description = "Invalid request data or malformed JSON", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "409", description = "The license plate already has an active parking stay", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
         })
         @PostMapping
         public ResponseEntity<ParkingStayResponse> registerParkingEntry(
@@ -135,29 +96,67 @@ public class ParkingStayController {
                                 .body(toResponse(parkingStay));
         }
 
-        @Operation(
-                summary = "Get an active parking stay by license plate",
-                description = "Returns the active parking stay associated with a vehicle license plate")
+        @Operation(summary = "Get an active parking stay by license plate", description = "Returns the active parking stay associated with a vehicle license plate")
         @ApiResponses({
-                @ApiResponse(
-                        responseCode = "200",
-                        description = "Active parking stay found",
-                        content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(
-                                        implementation = ParkingStayResponse.class))),
-                @ApiResponse(
-                        responseCode = "404",
-                        description = "Active parking stay not found",
-                        content = @Content(
-                                mediaType = "application/json",
-                                schema = @Schema(
-                                        implementation = ErrorResponse.class)))
+                        @ApiResponse(responseCode = "200", description = "Active parking stay found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ParkingStayResponse.class))),
+                        @ApiResponse(responseCode = "404", description = "Active parking stay not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
         })
         @GetMapping("/active/{licensePlate}")
         public ResponseEntity<ParkingStayResponse> getActiveParkingStay(
                         @PathVariable(name = "licensePlate") String licensePlate) {
                 ParkingStay parkingStay = service.findActiveByLicensePlate(licensePlate);
+
+                return ResponseEntity.ok(toResponse(parkingStay));
+        }
+
+        @Operation(
+                        summary = "Checkout a parking stay",
+                        description = "Registers the vehicle exit time and closes an active parking stay")
+        @ApiResponses({
+                        @ApiResponse(
+                                        responseCode = "200",
+                                        description = "Parking stay closed successfully",
+                                        content = @Content(
+                                                        mediaType = "application/json",
+                                                        schema = @Schema(
+                                                                        implementation = ParkingStayResponse.class))),
+                        @ApiResponse(
+                                        responseCode = "400",
+                                        description = "Invalid request data or malformed JSON",
+                                        content = @Content(
+                                                        mediaType = "application/json",
+                                                        schema = @Schema(
+                                                                        implementation = ErrorResponse.class))),
+                        @ApiResponse(
+                                        responseCode = "404",
+                                        description = "Parking stay not found",
+                                        content = @Content(
+                                                        mediaType = "application/json",
+                                                        schema = @Schema(
+                                                                        implementation = ErrorResponse.class))),
+                        @ApiResponse(
+                                        responseCode = "409",
+                                        description = "Parking stay is already closed",
+                                        content = @Content(
+                                                        mediaType = "application/json",
+                                                        schema = @Schema(
+                                                                        implementation = ErrorResponse.class))),
+                        @ApiResponse(
+                                        responseCode = "422",
+                                        description = "Exit time violates a business rule",
+                                        content = @Content(
+                                                        mediaType = "application/json",
+                                                        schema = @Schema(
+                                                                        implementation = ErrorResponse.class)))
+        })
+        @PatchMapping("/{id}/checkout")
+        public ResponseEntity<ParkingStayResponse> checkoutParkingStay(
+                        @PathVariable(name = "id") UUID id,
+                        @Valid @RequestBody CheckoutParkingStayRequest request) {
+
+                ParkingStay parkingStay = service.checkout(
+                                id,
+                                request.exitTime());
 
                 return ResponseEntity.ok(toResponse(parkingStay));
         }
