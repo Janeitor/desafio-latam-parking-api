@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +22,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import cl.desafiolatam.parking.domain.exception.ActiveParkingStayAlreadyExistsException;
 import cl.desafiolatam.parking.domain.model.ParkingStay;
 import cl.desafiolatam.parking.domain.port.ParkingStayRepository;
+
+import cl.desafiolatam.parking.domain.exception.ActiveParkingStayNotFoundException;
+import cl.desafiolatam.parking.domain.exception.ParkingStayNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class ParkingStayServiceTest {
@@ -115,5 +119,101 @@ class ParkingStayServiceTest {
 
                 assertThat(result.getId()).isEqualTo(id);
                 assertThat(result.getExitTime()).isEqualTo(exitTime);
+        }
+
+        @Test
+        void shouldReturnAllParkingStays() {
+                ParkingStay firstParkingStay = new ParkingStay(
+                                UUID.randomUUID(),
+                                "ABCD12",
+                                LocalDateTime.of(2026, 9, 3, 10, 0),
+                                null);
+
+                ParkingStay secondParkingStay = new ParkingStay(
+                                UUID.randomUUID(),
+                                "EFGH34",
+                                LocalDateTime.of(2026, 9, 3, 11, 0),
+                                null);
+
+                when(repository.findAll())
+                                .thenReturn(List.of(
+                                                firstParkingStay,
+                                                secondParkingStay));
+
+                List<ParkingStay> result = service.findAll();
+
+                assertThat(result)
+                                .containsExactly(
+                                                firstParkingStay,
+                                                secondParkingStay);
+
+                verify(repository).findAll();
+        }
+
+        @Test
+        void shouldFindActiveParkingStayByNormalizedLicensePlate() {
+                ParkingStay activeParkingStay = new ParkingStay(
+                                UUID.randomUUID(),
+                                "ABCD12",
+                                LocalDateTime.of(2026, 9, 3, 10, 0),
+                                null);
+
+                when(repository.findActiveByLicensePlate("ABCD12"))
+                                .thenReturn(Optional.of(activeParkingStay));
+
+                ParkingStay result = service.findActiveByLicensePlate(" abcd12 ");
+
+                assertThat(result).isSameAs(activeParkingStay);
+
+                verify(repository)
+                                .findActiveByLicensePlate("ABCD12");
+        }
+
+        @Test
+        void shouldRejectWhenActiveParkingStayDoesNotExist() {
+                when(repository.findActiveByLicensePlate("ABCD12"))
+                                .thenReturn(Optional.empty());
+
+                assertThatThrownBy(() -> service.findActiveByLicensePlate(" abcd12 "))
+                                .isInstanceOf(
+                                                ActiveParkingStayNotFoundException.class);
+
+                verify(repository)
+                                .findActiveByLicensePlate("ABCD12");
+        }
+
+        @Test
+        void shouldFindParkingStayById() {
+                UUID id = UUID.randomUUID();
+
+                ParkingStay parkingStay = new ParkingStay(
+                                id,
+                                "ABCD12",
+                                LocalDateTime.of(2026, 9, 3, 10, 0),
+                                null);
+
+                when(repository.findById(id))
+                                .thenReturn(Optional.of(parkingStay));
+
+                ParkingStay result = service.findById(id);
+
+                assertThat(result).isSameAs(parkingStay);
+
+                verify(repository).findById(id);
+        }
+
+        @Test
+        void shouldRejectWhenParkingStayIdDoesNotExist() {
+                UUID id = UUID.randomUUID();
+
+                when(repository.findById(id))
+                                .thenReturn(Optional.empty());
+
+                assertThatThrownBy(() -> service.findById(id))
+                                .isInstanceOf(
+                                                ParkingStayNotFoundException.class)
+                                .hasMessageContaining(id.toString());
+
+                verify(repository).findById(id);
         }
 }

@@ -514,7 +514,7 @@ Remove-Item Env:CORS_ALLOWED_ORIGIN -ErrorAction SilentlyContinue
 
 ## Pruebas automatizadas
 
-La suite contiene 25 pruebas y cubre:
+La suite contiene 30 pruebas y cubre:
 
 - reglas de `ParkingStay`;
 - casos de uso de entrada, consulta y salida;
@@ -531,13 +531,16 @@ PostgreSQL debe estar `healthy` porque las pruebas JPA y de contexto utilizan la
 ```powershell
 docker compose up -d
 docker compose ps
-mvn clean test
+mvn clean verify
 ```
+
+`verify` ejecuta las pruebas, genera el informe de JaCoCo y comprueba automáticamente el umbral configurado para el núcleo. Si la cobertura de líneas o ramas de `domain` y `application` baja del 100 %, Maven finaliza con error.
 
 Resultado esperado:
 
 ```text
-Tests run: 25, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+All coverage checks have been met.
 BUILD SUCCESS
 ```
 
@@ -550,6 +553,33 @@ mvn -Dtest=ParkingStayControllerTest test
 ```
 
 Si Docker está apagado, las pruebas puramente unitarias pueden pasar, pero las pruebas JPA y de contexto fallarán por falta de conexión. Eso representa un problema de infraestructura local, no necesariamente una regla de negocio incorrecta.
+
+### Cobertura con JaCoCo
+
+JaCoCo genera el informe HTML en:
+
+```text
+target/site/jacoco/index.html
+```
+
+Puede abrirse en Windows con:
+
+```powershell
+Start-Process target\site\jacoco\index.html
+```
+
+El informe distingue entre el núcleo lógico y la cobertura global:
+
+- `domain.model`: 100 % de instrucciones, líneas, métodos y ramas;
+- `domain.exception`: 100 % de instrucciones, líneas y métodos;
+- `application.service`: 100 % de instrucciones, líneas, métodos y ramas;
+- cobertura global: 84 % de instrucciones y 100 % de ramas.
+
+El 84 % global incluye componentes técnicos como el inicializador WAR, la clase de arranque y el adaptador JPA. La exigencia académica de esta entrega corresponde al 100 % de las reglas centrales del dominio y de los casos de uso, no a afirmar artificialmente que cada línea de infraestructura posee cobertura unitaria.
+
+La ejecución `jacoco:check` limita su umbral obligatorio a `domain/**` y `application/**`. Esta decisión queda declarada en `pom.xml`, por lo que el alcance de la métrica es visible, reproducible y verificable.
+
+![Informe JaCoCo con 100 % de cobertura en dominio y aplicación](docs/images/jacoco-core-coverage.png)
 
 ## Empaquetado
 
